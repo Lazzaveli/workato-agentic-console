@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Console - Adam Lazzara</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Icons (Inline SVGs for Reliability) ---
+        const Icons = {
+            LayoutDashboard: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+            Users: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Zap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            Target: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            CheckCircle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Globe: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+            BrainCircuit: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.97-3.284"/><path d="M17.97 14.716A4 4 0 0 1 18 18"/></svg>,
+            Puzzle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.439 15.416c-1.227-.23-2.184-1.187-2.414-2.414a2 2 0 1 1-3.953.978 2 2 0 1 1-3.95-.98 2 2 0 1 1-2.415 2.414 2 2 0 1 1-.979 3.952 2 2 0 1 1 .98 3.951 2 2 0 1 1 2.414 2.414 2 2 0 1 1 3.951.98 2 2 0 1 1 3.953-.979 2 2 0 1 1 2.414-2.414"/></svg>,
+            Briefcase: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            Play: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            Award: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>,
+            TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+            MessageSquare: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+            BookOpen: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Layers: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+            Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Code: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+            GitMerge: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>,
+            Megaphone: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>,
+            ShieldCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>,
+            ArrowRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
+        };
+
+        // --- Data & Content ---
+        const presentationData = {
+            candidate: {
+                name: "Adam Lazzara",
+                role: "Senior Manager - Agentic (Overlay), Global Solutions Consulting",
+                tagline: "Unblocking the Unblockers",
+                email: "AMLazzara@gmail.com",
+                phone: "678-634-4677"
+            },
+            stats: [
+                { label: "Force Multiplier Impact", value: "8 → 50+", trend: "Overlay Strategy", icon: "Users", color: "text-indigo-500", detail: "Scaling Agentic expertise across the Core SE org" },
+                { label: "Technical Win Rate", value: "38%", trend: "+17%", icon: "Target", color: "text-blue-500", detail: "Driven by practical, hands-on Agent building" },
+                { label: "Time to Value", value: "60%", trend: "Faster Prep", icon: "Zap", color: "text-purple-500", detail: "Reduced non-selling time via internal agents" }
+            ],
+            navItems: [
+                { id: 'home', label: 'Executive Summary', icon: "LayoutDashboard" },
+                { id: 'philosophy', label: 'Overlay Strategy', icon: "GitMerge" },
+                { id: 'team', label: 'Global "SEAL Team"', icon: "Globe" },
+                { id: 'plan', label: '30-60-90 Roadmap', icon: "Calendar" },
+                { id: 'innovation', label: 'Practical Innovation', icon: "Code" },
+                { id: 'success', label: 'Success Factors', icon: "Puzzle" },
+                { id: 'contact', label: 'Next Steps', icon: "MessageSquare" }
+            ]
+        };
+
+        // --- Components ---
+        const DeepDiveCard = ({ title, children, isOpen, onToggle }) => {
+            const OpenIcon = Icons["BookOpen"];
+            const Chevron = Icons["ChevronRight"];
+            return (
+                <div className={`mt-4 border rounded-xl overflow-hidden transition-all duration-300 ${isOpen ? 'bg-slate-50 border-indigo-200' : 'bg-white border-transparent'}`}>
+                    <button 
+                        onClick={onToggle}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 focus:outline-none"
+                    >
+                        <span className="font-semibold text-indigo-700 flex items-center gap-2">
+                            <OpenIcon size={16} />
+                            {isOpen ? 'Hide Detail' : `Deep Dive: ${title}`}
+                        </span>
+                        <Chevron size={16} className={`text-indigo-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                    {isOpen && (
+                        <div className="p-4 pt-0 border-t border-indigo-100 animate-fadeIn">
+                            {children}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const MetricCard = ({ label, value, trend, icon, color, detail }) => {
+            const IconComponent = Icons[icon];
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow h-full">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="text-slate-500 text-sm font-medium mb-1">{label}</p>
+                            <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
+                        </div>
+                        <div className={`p-3 rounded-lg bg-slate-50 ${color.replace('text-', 'bg-').replace('500', '100')}`}>
+                            <IconComponent size={24} className={color} />
+                        </div>
+                    </div>
+                    <div>
+                        <span className={`text-xs font-semibold ${color} bg-opacity-10 px-2 py-1 rounded-full inline-block bg-slate-100`}>
+                            {trend}
+                        </span>
+                        <p className="text-xs text-slate-400 mt-2">{detail}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Views ---
+
+        const HomeView = () => {
+            const [showDetail, setShowDetail] = useState(false);
+            const BriefcaseIcon = Icons["Briefcase"];
+            
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 rounded-2xl p-8 text-white shadow-lg">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="bg-indigo-500/30 text-indigo-100 text-xs font-bold px-2 py-1 rounded border border-indigo-400/30">INTERVIEW PRESENTATION</span>
+                                    <span className="text-indigo-300 text-xs">PANEL DISCUSSION</span>
+                                </div>
+                                <h1 className="text-3xl font-bold mb-2">Leading the Agentic Overlay</h1>
+                                <p className="text-indigo-200 text-lg">Operationalizing the Future for Workato's Global Solutions Consulting</p>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 min-w-[200px]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-xl shadow-inner text-white">AL</div>
+                                    <div>
+                                        <p className="font-semibold">Adam Lazzara</p>
+                                        <p className="text-xs text-indigo-200">Candidate Profile</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8 pt-8 border-t border-white/10">
+                            <p className="italic text-lg text-indigo-100 max-w-3xl leading-relaxed">
+                                "I'm not here to just manage a team; I'm here to lead a 'Special Forces' unit. My goal is to unblock the unblockers—empowering my 13-person overlay team to enable the 50+ core SEs to sell the Agentic vision with confidence."
+                            </p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {presentationData.stats.map((stat, idx) => (
+                            <MetricCard key={idx} {...stat} />
+                        ))}
+                    </div>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <BriefcaseIcon className="text-indigo-600" size={20} />
+                                The "Player-Coach" Track Record
+                            </h3>
+                            <button 
+                                onClick={() => setShowDetail(!showDetail)}
+                                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium focus:outline-none"
+                            >
+                                {showDetail ? "Show Less" : "Why this fits the Overlay Role"}
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg border-l-4 border-indigo-500 hover:bg-indigo-50 transition-colors">
+                                <div className="flex-1">
+                                    <div className="flex justify-between">
+                                        <h4 className="font-bold text-slate-800">Practical AI Builder</h4>
+                                        <span className="text-xs font-bold text-slate-500">BirdEye & N8n</span>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mt-1">I don't just talk theory. I built SDR workflows in N8n and led AI implementation. I speak "Developer" and "Executive."</p>
+                                    {showDetail && (
+                                        <div className="mt-3 pt-3 border-t border-indigo-200 text-xs text-slate-700">
+                                            <strong>Relevance:</strong> This team needs a technical leader who can roll up their sleeves and fix a demo, not just a spreadsheet manager.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg border-l-4 border-blue-500 hover:bg-blue-50 transition-colors">
+                                <div className="flex-1">
+                                    <div className="flex justify-between">
+                                        <h4 className="font-bold text-slate-800">Scaling via Influence</h4>
+                                        <span className="text-xs font-bold text-slate-500">Sprout & SOCi</span>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mt-1">Scaled revenue ($30M &rarr; $100M+) by enabling large sales teams, not just closing deals myself.</p>
+                                    {showDetail && (
+                                        <div className="mt-3 pt-3 border-t border-blue-200 text-xs text-slate-700">
+                                            <strong>Relevance:</strong> As an Overlay leader, my success is measured by the Core team's success. I know how to influence without direct authority.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PhilosophyView = () => {
+            const [activeDeepDive, setActiveDeepDive] = useState(null);
+            const toggleDeepDive = (id) => setActiveDeepDive(activeDeepDive === id ? null : id);
+            
+            const GitMerge = Icons["GitMerge"];
+            const Target = Icons["Target"];
+            const CheckCircle = Icons["CheckCircle"];
+            const Settings = Icons["Settings"];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
+                        <GitMerge size={48} className="mx-auto text-indigo-600 mb-4" />
+                        <h2 className="text-3xl font-bold text-slate-800 mb-2">The Force Multiplier Effect</h2>
+                        <p className="text-slate-500 text-lg">Leading a High-Impact Overlay Team</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+                            <h3 className="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                                <Target size={24} /> Strategy: Enable & Evangelize
+                            </h3>
+                            <p className="text-sm text-indigo-800 mb-4">
+                                Our 13 people cannot support every deal. We must be the "Special Forces" that train the regular army (Core SEs) to fight.
+                            </p>
+                            <ul className="space-y-3">
+                                <li className="flex items-start gap-3">
+                                    <CheckCircle size={20} className="text-indigo-600 mt-1 shrink-0" />
+                                    <span className="text-slate-700"><strong>Tier 1 Support:</strong> Core SEs handle standard Agentic pitches.</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <CheckCircle size={20} className="text-indigo-600 mt-1 shrink-0" />
+                                    <span className="text-slate-700"><strong>Tier 2 Support:</strong> My team parachutes in for "Must Win" strategic deals only.</span>
+                                </li>
+                            </ul>
+                            <DeepDiveCard title="Practical vs. Hype" isOpen={activeDeepDive === 'hype'} onToggle={() => toggleDeepDive('hype')}>
+                                <p className="text-sm text-slate-600 mb-2">We cut through the noise.</p>
+                                <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                                    <li><strong>Philosophy:</strong> Don't sell "AI Magic." Sell "Practical Automation."</li>
+                                    <li><strong>Action:</strong> We build demos that show agents doing boring work (data entry, reconciliation), not just flashy chat bots.</li>
+                                </ul>
+                            </DeepDiveCard>
+                        </div>
+                        <div className="bg-teal-50 p-6 rounded-xl border border-teal-100">
+                            <h3 className="text-xl font-bold text-teal-900 mb-4 flex items-center gap-2">
+                                <Settings size={24} /> Execution: The Feedback Loop
+                            </h3>
+                            <p className="text-sm text-teal-800 mb-4">
+                                My team sits at the intersection of Customer, Sales, and Product. We are the "Gap Detectors."
+                            </p>
+                            <ul className="space-y-3">
+                                <li className="flex items-start gap-3">
+                                    <CheckCircle size={20} className="text-teal-600 mt-1 shrink-0" />
+                                    <span className="text-slate-700"><strong>Gap Analysis:</strong> Bi-weekly report to Product on *exactly* why we lost a technical win.</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <CheckCircle size={20} className="text-teal-600 mt-1 shrink-0" />
+                                    <span className="text-slate-700"><strong>Unblocking:</strong> I actively hunt for internal friction (e.g., slow demo environments) and kill it.</span>
+                                </li>
+                            </ul>
+                            <DeepDiveCard title="My Role as Partner" isOpen={activeDeepDive === 'partner'} onToggle={() => toggleDeepDive('partner')}>
+                                <p className="text-sm text-slate-600 mb-2">Mike, I am looking for a partner in crime, just as you mentioned.</p>
+                                <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                                    <li>I handle the day-to-day "block and tackle" so you can focus on Global Strategy.</li>
+                                    <li>I provide the "Ground Truth" reality check on what's actually happening in deals.</li>
+                                </ul>
+                            </DeepDiveCard>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TeamView = () => {
+            const [activeTab, setActiveTab] = useState('structure');
+            
+            const Globe = Icons["Globe"];
+            const Users = Icons["Users"];
+            const ArrowRight = Icons["ArrowRight"];
+            const Zap = Icons["Zap"];
+            const Megaphone = Icons["Megaphone"];
+            const Code = Icons["Code"];
+            const ShieldCheck = Icons["ShieldCheck"];
+            const Layers = Icons["Layers"];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                    <Globe className="text-indigo-600" /> The Agentic "SEAL Team"
+                                </h2>
+                                <p className="text-slate-500 text-sm">Orchestrating a lean team of 13 to influence an org of 50+.</p>
+                            </div>
+                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setActiveTab('structure')} className={`px-3 py-1 text-sm rounded-md font-medium transition-all ${activeTab === 'structure' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'} focus:outline-none`}>Structure</button>
+                                <button onClick={() => setActiveTab('rituals')} className={`px-3 py-1 text-sm rounded-md font-medium transition-all ${activeTab === 'rituals' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'} focus:outline-none`}>Coaching</button>
+                            </div>
+                        </div>
+                        {activeTab === 'structure' && (
+                            <div className="animate-fadeIn">
+                                <div className="relative bg-slate-900 rounded-lg p-8 h-72 flex items-center justify-center overflow-hidden mb-6">
+                                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-500 via-slate-900 to-slate-900"></div>
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="w-[400px] h-[400px] border border-slate-700 rounded-full opacity-30"></div>
+                                        <div className="w-[250px] h-[250px] border border-indigo-500/50 rounded-full absolute"></div>
+                                    </div>
+                                    <div className="flex justify-between w-full max-w-3xl relative z-10 items-center">
+                                        <div className="text-center group bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                            <div className="flex gap-1 justify-center mb-2">
+                                                <Users size={16} className="text-slate-400" />
+                                                <Users size={16} className="text-slate-400" />
+                                                <Users size={16} className="text-slate-400" />
+                                            </div>
+                                            <p className="text-slate-300 font-bold text-sm">Core SE Team (50+)</p>
+                                            <p className="text-slate-500 text-xs">Generalists</p>
+                                        </div>
+                                        <div className="flex-1 px-4 text-center">
+                                            <ArrowRight className="text-indigo-500 mx-auto animate-pulse" />
+                                            <p className="text-center text-xs text-indigo-400 mt-1">Enablement & Assets</p>
+                                        </div>
+                                        <div className="text-center group bg-indigo-900/50 p-4 rounded-xl border border-indigo-500">
+                                            <div className="w-12 h-12 bg-indigo-500 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                                                <Zap className="text-white" size={24} />
+                                            </div>
+                                            <p className="text-white font-bold">Agentic Overlay (13)</p>
+                                            <p className="text-indigo-200 text-xs uppercase tracking-wider font-bold">Experts</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex gap-3">
+                                    <div className="p-2 bg-blue-100 rounded-full h-fit"><Megaphone size={18} className="text-blue-600"/></div>
+                                    <div>
+                                        <h4 className="font-bold text-blue-900 text-sm">Strategy: "Train the Trainer"</h4>
+                                        <p className="text-sm text-blue-800">My team's KPI isn't just "Deals Closed." It's "Core SEs Certified." We scale by ensuring every Core SE can run a standard Agentic demo without us.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'rituals' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+                                <div className="p-4 border border-slate-200 rounded-lg">
+                                    <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><Code size={16} className="text-indigo-600"/> Technical Coaching</h4>
+                                    <p className="text-sm text-slate-600">I will personally run "Build Hours" where we code agents together. I don't just review slides; I review logic/flows.</p>
+                                </div>
+                                <div className="p-4 border border-slate-200 rounded-lg">
+                                    <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><ShieldCheck size={16} className="text-indigo-600"/> Deal Autopsies</h4>
+                                    <p className="text-sm text-slate-600">Reviewing closed-lost deals to find "Automation Gaps." Did we lose because of product, or because we didn't show value?</p>
+                                </div>
+                                <div className="p-4 border border-slate-200 rounded-lg">
+                                    <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><Layers size={16} className="text-indigo-600"/> Unblocking</h4>
+                                    <p className="text-sm text-slate-600">My job is to remove hurdles. If the demo environment is slow, I fight with Ops to fix it. If Legal is blocking a POC, I step in.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const PlanView = () => {
+            const [activePhase, setActivePhase] = useState('30');
+            const phases = {
+                '30': {
+                    title: "Discovery & Diagnosis", theme: "The Audit", color: "indigo",
+                    people: ["Meet the 8 existing team members + 5 open reqs.", "Assess technical depth: Who are the true 'Builders'?", "Establish relationship with Product/Engineering leaders."],
+                    process: ["Audit existing 'Agentic' demo assets. Are they realistic?", "Analyze the 'Overlay Handoff' process. Where is the friction?", "Review Win/Loss data for technical gaps."],
+                    tech: ["Get hands-on access to the sandbox (I'm a nerd, I need to build).", "Audit current N8n/Workato internal workflows."]
+                },
+                '60': {
+                    title: "Operationalize & Unblock", theme: "The Build", color: "teal",
+                    people: ["Fill the 5 open headcounts with 'Builder' profiles.", "Launch 'Agentic 101' enablement for the Core SE team.", "Identify 'Agentic Champions' within the Core team."],
+                    process: ["Implement bi-weekly 'Product Gap' report.", "Standardize the 'Must Win' engagement criteria.", "Deploy the 'Quick Win' internal agent (e.g., RFP Helper)."],
+                    tech: ["Build a 'Golden Demo' environment that resets automatically.", "Integrate Gong for conversation intelligence on 'Agent' objections."]
+                },
+                '90': {
+                    title: "Scale & Evangelize", theme: "The Growth", color: "purple",
+                    people: ["Core SEs certified to run Level 1 Agentic demos.", "Launch internal 'Hackathon' to drive innovation.", "Performance review: Shift focus to 'Enablement Impact'."],
+                    process: ["Publish 'Value Realization' case studies (Post-Sales loop).", "Formalize the 'Pre-Sales -> Product' roadmap influence.", "Establish global 'Follow the Sun' support model."],
+                    tech: ["Full rollout of Agentic Prep tools to entire Sales org.", "Predictive 'Win Probability' scoring for Overlay resource allocation."]
+                }
+            };
+            const current = phases[activePhase];
+            
+            const Users = Icons["Users"];
+            const Layers = Icons["Layers"];
+            const Zap = Icons["Zap"];
+            const Search = Icons["Search"];
+            const Code = Icons["Code"];
+            const TrendingUp = Icons["TrendingUp"];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-slate-800">Strategic Roadmap</h2>
+                    </div>
+                    <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                        {Object.keys(phases).map((phase) => (
+                            <button key={phase} onClick={() => setActivePhase(phase)} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${activePhase === phase ? `bg-${phases[phase].color}-50 text-${phases[phase].color}-700 shadow-sm ring-1 ring-${phases[phase].color}-200` : 'text-slate-500 hover:bg-slate-50'} focus:outline-none`}>
+                                Day {phase}
+                            </button>
+                        ))}
+                    </div>
+                    <div className={`bg-white rounded-xl shadow-sm border-t-4 border-${current.color}-500 overflow-hidden`}>
+                        <div className={`bg-${current.color}-50 p-6 border-b border-${current.color}-100`}>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className={`text-2xl font-bold text-${current.color}-900`}>{current.title}</h3>
+                                    <p className={`text-${current.color}-700 font-medium`}>Theme: {current.theme}</p>
+                                </div>
+                                <div className={`h-12 w-12 rounded-full bg-white flex items-center justify-center text-${current.color}-600`}>
+                                    {activePhase === '30' && <Search size={24} />}
+                                    {activePhase === '60' && <Code size={24} />}
+                                    {activePhase === '90' && <TrendingUp size={24} />}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div>
+                                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Users size={18} className="text-slate-400" /> People</h4>
+                                <ul className="space-y-3">
+                                    {current.people.map((item, i) => <li key={i} className="flex items-start gap-3 text-sm text-slate-600"><div className={`mt-1.5 h-1.5 w-1.5 rounded-full bg-${current.color}-500 shrink-0`}></div>{item}</li>)}
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Layers size={18} className="text-slate-400" /> Process</h4>
+                                <ul className="space-y-3">
+                                    {current.process.map((item, i) => <li key={i} className="flex items-start gap-3 text-sm text-slate-600"><div className={`mt-1.5 h-1.5 w-1.5 rounded-full bg-${current.color}-500 shrink-0`}></div>{item}</li>)}
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Zap size={18} className="text-slate-400" /> Technology</h4>
+                                <ul className="space-y-3">
+                                    {current.tech.map((item, i) => <li key={i} className="flex items-start gap-3 text-sm text-slate-600"><div className={`mt-1.5 h-1.5 w-1.5 rounded-full bg-${current.color}-500 shrink-0`}></div>{item}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const InnovationView = () => {
+            const [activeRecipe, setActiveRecipe] = useState(1);
+            
+            const Calendar = Icons["Calendar"];
+            const BrainCircuit = Icons["BrainCircuit"];
+            const Settings = Icons["Settings"];
+            const CheckCircle = Icons["CheckCircle"];
+            const Code = Icons["Code"];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">Practical Innovation</h2>
+                                <p className="text-sm text-slate-500">I don't just ask for tools; I build them. (BirdEye Experience)</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setActiveRecipe(1)} className={`px-3 py-1 text-xs rounded border ${activeRecipe === 1 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'border-slate-200'} focus:outline-none`}>Recipe 1: SDR Prep</button>
+                                <button onClick={() => setActiveRecipe(2)} className={`px-3 py-1 text-xs rounded border ${activeRecipe === 2 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'border-slate-200'} focus:outline-none`}>Recipe 2: Gap Analysis</button>
+                            </div>
+                        </div>
+                        {activeRecipe === 1 ? (
+                            <div className="relative animate-fadeIn">
+                                <h3 className="font-bold text-indigo-900 mb-4">The "Zero-Click" Prep Agent</h3>
+                                <p className="text-xs text-slate-500 mb-4 italic">Actually built and deployed this at BirdEye using N8n.</p>
+                                <div className="absolute left-8 top-20 bottom-10 w-0.5 bg-slate-200"></div>
+                                <div className="flex gap-4 mb-8 relative z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+                                        <Calendar className="text-orange-500" size={24} />
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex-1">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Trigger</span>
+                                        <h4 className="font-bold text-slate-800">Sales Rep Books Meeting</h4>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 mb-8 relative z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+                                        <BrainCircuit className="text-purple-500" size={24} />
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex-1">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Action: Research Agent</span>
+                                        <h4 className="font-bold text-slate-800">Scrape & Synthesize</h4>
+                                        <p className="text-sm text-slate-600">Agent scrapes G2 Reviews, 10-K Reports, and LinkedIn. Synthesizes "Pain Points" relevant to Workato.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 relative z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+                                        <Settings className="text-teal-500" size={24} />
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex-1">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Action: Enablement</span>
+                                        <h4 className="font-bold text-slate-800">Attack Sheet Generation</h4>
+                                        <p className="text-sm text-slate-600">Emails a PDF "Attack Sheet" to the Rep 10 mins before the call. <strong>Reduced Prep time by 60%.</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="relative animate-fadeIn">
+                                <h3 className="font-bold text-indigo-900 mb-4">The "Gap Detector" Agent</h3>
+                                <p className="text-xs text-slate-500 mb-4 italic">Solving the 'Feedback Loop' problem Mike mentioned.</p>
+                                <div className="absolute left-8 top-20 bottom-10 w-0.5 bg-slate-200"></div>
+                                <div className="flex gap-4 mb-8 relative z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+                                        <CheckCircle className="text-red-500" size={24} />
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex-1">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Trigger</span>
+                                        <h4 className="font-bold text-slate-800">Deal Marked "Closed Lost"</h4>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 relative z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+                                        <Code className="text-blue-500" size={24} />
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex-1">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Action: Technical Audit</span>
+                                        <h4 className="font-bold text-slate-800">Analyze & Report</h4>
+                                        <p className="text-sm text-slate-600">Agent reads the Gong transcript for "Feature Missing" keywords. Aggregates data into a monthly <strong>Product Gap Report</strong>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const SuccessView = () => {
+            const Target = Icons["Target"];
+            const Settings = Icons["Settings"];
+            const LayoutDashboard = Icons["LayoutDashboard"];
+            const CheckCircle = Icons["CheckCircle"];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800 mb-4">What I Need to Succeed</h2>
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                                    <div className="p-2 bg-indigo-100 rounded text-indigo-600"><Target size={20} /></div>
+                                    <div><h4 className="font-bold text-slate-800">A True Partnership</h4><p className="text-sm text-slate-600">Mike, you mentioned needing a "Partner in Crime." I need access to be that partner—open communication on frustrations and strategy.</p></div>
+                                </div>
+                                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                                    <div className="p-2 bg-teal-100 rounded text-teal-600"><Settings size={20} /></div>
+                                    <div><h4 className="font-bold text-slate-800">License to Build</h4><p className="text-sm text-slate-600">I need hands-on access to the platform. I cannot lead a technical team if I am not building alongside them.</p></div>
+                                </div>
+                                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                                    <div className="p-2 bg-purple-100 rounded text-purple-600"><LayoutDashboard size={20} /></div>
+                                    <div><h4 className="font-bold text-slate-800">Influence Authority</h4><p className="text-sm text-slate-600">As an Overlay, I need Executive backing to enforce "Certification" requirements on the Core SE team.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl shadow-lg text-white flex flex-col justify-center">
+                            <h3 className="text-xl font-bold mb-4">Why Adam Lazzara?</h3>
+                            <p className="text-slate-300 text-sm mb-6">"I am the Player-Coach who understands the 'Overlay' dynamic and has the technical chops to actually build the future."</p>
+                            <ul className="space-y-4">
+                                <li className="flex items-center gap-3"><CheckCircle className="text-green-400" size={20} /><span className="font-medium">Proven "Force Multiplier" (Overlay Exp)</span></li>
+                                <li className="flex items-center gap-3"><CheckCircle className="text-green-400" size={20} /><span className="font-medium">Technical Builder (I code/build tools)</span></li>
+                                <li className="flex items-center gap-3"><CheckCircle className="text-green-400" size={20} /><span className="font-medium">Unblocker of Unblockers</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ContactView = () => {
+            const MessageSquare = Icons["MessageSquare"];
+            return (
+                <div className="flex flex-col items-center justify-center h-full animate-fadeIn p-12 text-center bg-white rounded-xl shadow-sm border border-slate-100">
+                    <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+                        <MessageSquare size={48} className="text-indigo-600" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-slate-800 mb-2">Let's build the future of work.</h2>
+                    <p className="text-slate-500 mb-8 max-w-md">"I'm ready to be your partner in crime and lead this team to operational excellence."</p>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <a href="mailto:AMLazzara@gmail.com" className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">AMLazzara@gmail.com</a>
+                        <a href="tel:678-634-4677" className="bg-white border border-slate-300 text-slate-700 px-6 py-3 rounded-lg font-medium hover:bg-slate-50 transition-colors">678-634-4677</a>
+                    </div>
+                    <div className="mt-12 pt-8 border-t border-slate-100 w-full max-w-lg">
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-4">References & Portfolio</p>
+                        <div className="flex justify-center gap-6 text-sm text-indigo-600 font-medium">
+                            <a href="https://linkedin.com/in/adamlazzara" target="_blank" rel="noreferrer" className="hover:underline">LinkedIn Profile</a>
+                            <span>•</span>
+                            <a href="https://medium.com/@AdamLazzara" target="_blank" rel="noreferrer" className="hover:underline">Medium Articles</a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            
+            const Zap = Icons["Zap"];
+            const MenuIcon = Icons["Menu"];
+            const XIcon = Icons["X"];
+            const LayoutDashboard = Icons["LayoutDashboard"];
+            const ChevronRight = Icons["ChevronRight"];
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'home': return <HomeView />;
+                    case 'philosophy': return <PhilosophyView />;
+                    case 'team': return <TeamView />;
+                    case 'plan': return <PlanView />;
+                    case 'innovation': return <InnovationView />;
+                    case 'success': return <SuccessView />;
+                    case 'contact': return <ContactView />;
+                    default: return <HomeView />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+                    {/* Mobile Menu Button */}
+                    <button 
+                        className="md:hidden fixed top-4 left-4 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
+                    </button>
+
+                    {/* Sidebar Navigation */}
+                    <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#3B2D5D] text-white transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 shadow-2xl`}>
+                        <div className="p-6 border-b border-white/10 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-teal-400 rounded-lg flex items-center justify-center shadow-lg shadow-teal-500/20">
+                                <Zap className="text-[#3B2D5D]" size={20} fill="currentColor"/>
+                            </div>
+                            <span className="font-bold text-lg tracking-tight">Agentic<span className="font-light opacity-80">Console</span></span>
+                        </div>
+                        <nav className="p-4 space-y-2">
+                            {presentationData.navItems.map((item) => {
+                                const ItemIcon = Icons[item.icon];
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === item.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30 font-medium translate-x-1' : 'text-indigo-200 hover:bg-white/10 hover:text-white hover:translate-x-1'} focus:outline-none`}
+                                    >
+                                        <ItemIcon size={18} />
+                                        {item.label}
+                                        {activeTab === item.id && <ChevronRight size={16} className="ml-auto" />}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                        <div className="absolute bottom-0 w-full p-6 bg-[#2f244a]">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-xs font-bold shadow-lg text-white">AL</div>
+                                <div>
+                                    <p className="text-sm font-medium">Adam Lazzara</p>
+                                    <p className="text-xs text-indigo-300">Candidate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 md:ml-64 transition-all">
+                        {/* Top Header */}
+                        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm/50 backdrop-blur-md bg-white/90">
+                            <div className="flex items-center text-sm text-slate-500 md:ml-0 ml-12">
+                                <span className="hidden md:inline">Interview Presentation</span>
+                                <ChevronRight size={14} className="mx-2 hidden md:inline" />
+                                <span className="font-semibold text-indigo-600">
+                                    {presentationData.navItems.find(i => i.id === activeTab)?.label}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100 text-xs font-medium">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                    Live Dashboard
+                                </div>
+                            </div>
+                        </header>
+                        {/* Dashboard Canvas */}
+                        <div className="p-6 md:p-8 max-w-7xl mx-auto pb-24">
+                            {renderContent()}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
